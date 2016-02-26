@@ -45,3 +45,10 @@ class NameNodePeers(RelationBase):
             host_name = conv.scope.replace('/', '-')
             result.update({ip: host_name})
         return result
+
+    def check_peer_hdfs(self, hdfs_port):
+        # this won't work if there are more than 2 namenodes - fix
+        for conv in self.conversations():
+            peer_ip = utils.resolve_private_address(conv.get_remote('private-address', ''))
+            result = utils.check_peer_hdfs(peer_ip, hdfs_port)
+        return result
