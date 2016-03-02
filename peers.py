@@ -26,6 +26,7 @@ class NameNodePeers(RelationBase):
     def joined(self):
         conv = self.conversation()
         conv.set_state('{relation_name}.joined')
+        conv.set_state('{relation_name}.initialized')
 
     @hook('{peers:namenode-cluster}-relation-departed')
     def departed(self):
@@ -52,3 +53,11 @@ class NameNodePeers(RelationBase):
             peer_ip = utils.resolve_private_address(conv.get_remote('private-address', ''))
             result = utils.check_peer_port(peer_ip, port)
         return result
+
+    def jns_ready(self):
+        self.set_remote(data={
+            'jns_ready': True,
+        })
+
+    def are_jns_ready(self):
+        return self.get_remote('jns_ready', 'false').lower() == 'true'
