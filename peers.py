@@ -62,4 +62,4 @@ class NameNodePeers(RelationBase):
 
     def are_jns_init(self):
         for conv in self.conversations():
-            return self.get_remote('jns_ready', 'false').lower() == 'true'
+            return conv.get_remote('jns_ready', 'false').lower() == 'true'
