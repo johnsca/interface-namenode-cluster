@@ -55,9 +55,11 @@ class NameNodePeers(RelationBase):
         return result
 
     def jns_ready(self):
-        self.set_remote(data={
-            'jns_ready': True,
-        })
+        for conv in self.conversations():
+            conv.set_remote(data={
+                'jns_ready': True,
+            })
 
     def are_jns_ready(self):
-        return self.get_remote('jns_ready', 'false').lower() == 'true'
+        for conv in self.conversations():
+            return self.get_remote('jns_ready', 'false').lower() == 'true'
