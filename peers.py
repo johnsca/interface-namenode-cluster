@@ -54,12 +54,12 @@ class NameNodePeers(RelationBase):
             result = utils.check_peer_port(peer_ip, port)
         return result
 
-    def jns_ready(self):
+    def jns_init(self):
         for conv in self.conversations():
             conv.set_remote(data={
                 'jns_ready': True,
             })
 
-    def are_jns_ready(self):
+    def are_jns_init(self):
         for conv in self.conversations():
             return self.get_remote('jns_ready', 'false').lower() == 'true'
