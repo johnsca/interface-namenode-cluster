@@ -33,12 +33,39 @@ class NameNodePeers(RelationBase):
         conv = self.conversation()
         conv.remove_state('{relation_name}.joined')
 
+    #def nodes(self):
+    #    node_names = [hookenv.local_unit().replace('/', '-')]
+    #    for conv in self.conversations():
+    #        node_names.append(conv.scope.replace('/', '-'))
+    #    return sorted(node_names)[:2]  # only use the first two peers, if more
+
     def nodes(self):
         node_names = [hookenv.local_unit().replace('/', '-')]
         for conv in self.conversations():
             node_names.append(conv.scope.replace('/', '-'))
-        return sorted(node_names)[:2]  # only use the first two peers, if more
-
+            node_names = sorted(node_names)
+            try:
+                stored_nodes = hookenv.leader_get('validated_namenodes')
+            except:
+                stored_nodes = node_names[:2]
+            if not hookenv.is_leader():
+                return stored_nodes 
+            elif hookenv.is_leader():
+                checked_nodes = []
+                for node in node_names:
+                    result = utils.ha_node_state(node)
+                    if result == 'active' or result == 'standby':
+                        checked_nodes.append(result)
+                checked_nodes = sorted(checked_nodes)
+                if len(checked_nodes) < 2:
+                    hookenv.log("Only one node is responding, according to hadoop, HDFS HA is degraded...")
+                    return stored_nodes
+                if sorted(checked_nodes) == stored_nodes:
+                    return stored_nodes
+                else:
+                    hookenv.leader_set(validated_namenodes=checked_nodes)
+                    return checked_nodes
+    
     def hosts_map(self):
         result = {}
         for conv in self.conversations():
@@ -63,3 +90,4 @@ class NameNodePeers(RelationBase):
     def are_jns_init(self):
         for conv in self.conversations():
             return conv.get_remote('jns_ready', 'false').lower() == 'true'
+
