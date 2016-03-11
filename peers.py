@@ -44,9 +44,8 @@ class NameNodePeers(RelationBase):
         for conv in self.conversations():
             node_names.append(conv.scope.replace('/', '-'))
             node_names = sorted(node_names)
-            try:
-                stored_nodes = hookenv.leader_get('validated_namenodes')
-            except:
+            stored_nodes = hookenv.leader_get('validated_namenodes')
+            if not stored_nodes:
                 stored_nodes = node_names[:2]
             if not hookenv.is_leader():
                 return stored_nodes 
@@ -54,7 +53,7 @@ class NameNodePeers(RelationBase):
                 checked_nodes = []
                 for node in node_names:
                     result = utils.ha_node_state(node)
-                    if result == 'active' or result == 'standby':
+                    if result and result == 'active' or result == 'standby':
                         checked_nodes.append(result)
                 checked_nodes = sorted(checked_nodes)
                 if len(checked_nodes) < 2:
