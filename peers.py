@@ -21,6 +21,7 @@ from jujubigdata import utils
 
 class NameNodePeers(RelationBase):
     scope = scopes.UNIT
+    auto_accessors = ['ssh-key-active', 'ssh-key-standby']
 
     @hook('{peers:namenode-cluster}-relation-joined')
     def joined(self):
@@ -65,6 +66,14 @@ class NameNodePeers(RelationBase):
                     hookenv.leader_set(validated_namenodes=checked_nodes)
                     return checked_nodes
     
+    def send_ssh_key_active(self, ssh_key):
+        for conv in self.conversations():
+            conv.set_remote('ssh-key-active', ssh_key)
+
+    def send_ssh_key_standby(self, ssh_key):
+        for conv in self.conversations():
+            conv.set_remote('ssh-key-standby', ssh_key)
+
     def hosts_map(self):
         result = {}
         for conv in self.conversations():
