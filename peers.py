@@ -21,7 +21,6 @@ from jujubigdata import utils
 
 class NameNodePeers(RelationBase):
     scope = scopes.UNIT
-    auto_accessors = ['ssh-key']
 
     @hook('{peers:namenode-cluster}-relation-joined')
     def joined(self):
