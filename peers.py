@@ -98,3 +98,12 @@ class NameNodePeers(RelationBase):
         for conv in self.conversations():
             return conv.get_remote('jns_ready', 'false').lower() == 'true'
 
+    def zookeeper_formatted(self):
+        for conv in self.conversations():
+            conv.set_remote(data={
+                'zookeeper_formatted': True,
+            })
+
+    def is_zookeeper_formatted(self):
+        for conv in self.conversations():
+            return conv.get_remote('zookeeper_formatted', 'false').lower() == 'true'
