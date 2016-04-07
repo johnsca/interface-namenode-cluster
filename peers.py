@@ -10,6 +10,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+
 from charms.reactive import RelationBase
 from charms.reactive import hook
 from charms.reactive import scopes
@@ -62,34 +64,32 @@ class NameNodePeers(RelationBase):
     def hosts_map(self):
         result = {}
         for conv in self.conversations():
-            ip = utils.resolve_private_address(conv.get_remote('private-address', ''))
+            addr = conv.get_remote('private-address', '')
+            ip = utils.resolve_private_address(addr)
             host_name = conv.scope.replace('/', '-')
             result.update({ip: host_name})
         return result
 
     def check_peer_port(self, port):
-        # this won't work if there are more than 2 namenodes - fix
-        for conv in self.conversations():
-            peer_ip = utils.resolve_private_address(conv.get_remote('private-address', ''))
-            result = utils.check_peer_port(peer_ip, port)
-        return result
+        return all(utils.check_peer_port(peer_ip, port)
+                   for peer_ip in self.hosts_map().keys())
 
     def jns_init(self):
         for conv in self.conversations():
             conv.set_remote(data={
-                'jns_ready': True,
+                'jns_ready': json.dumps(True),
             })
 
     def are_jns_init(self):
-        for conv in self.conversations():
-            return conv.get_remote('jns_ready', 'false').lower() == 'true'
+        return all(json.loads(conv.get_remote('jns_ready', 'false'))
+                   for conv in self.conversations())
 
     def zookeeper_formatted(self):
         for conv in self.conversations():
             conv.set_remote(data={
-                'zookeeper_formatted': True,
+                'zookeeper_formatted': json.dumps(True),
             })
 
     def is_zookeeper_formatted(self):
-        for conv in self.conversations():
-            return conv.get_remote('zookeeper_formatted', 'false').lower() == 'true'
+        return all(json.loads(conv.get_remote('zookeeper_formatted', 'false'))
+                   for conv in self.conversations())
