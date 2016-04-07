@@ -33,12 +33,6 @@ class NameNodePeers(RelationBase):
         conv = self.conversation()
         conv.remove_state('{relation_name}.joined')
 
-    #def nodes(self):
-    #    node_names = [hookenv.local_unit().replace('/', '-')]
-    #    for conv in self.conversations():
-    #        node_names.append(conv.scope.replace('/', '-'))
-    #    return sorted(node_names)[:2]  # only use the first two peers, if more
-
     def nodes(self):
         node_names = [hookenv.local_unit().replace('/', '-')]
         for conv in self.conversations():
@@ -48,7 +42,7 @@ class NameNodePeers(RelationBase):
             if not stored_nodes:
                 stored_nodes = node_names[:2]
             if not hookenv.is_leader():
-                return stored_nodes 
+                return stored_nodes
             elif hookenv.is_leader():
                 checked_nodes = []
                 for node in node_names:
@@ -64,14 +58,6 @@ class NameNodePeers(RelationBase):
                 else:
                     hookenv.leader_set(validated_namenodes=checked_nodes)
                     return checked_nodes
-    
-    def send_ssh_key(self, ssh_key):
-        for conv in self.conversations():
-            conv.set_remote('ssh-key', ssh_key)
-
-    def ssh_key(self):
-        for conv in self.conversations():
-            return conv.get_remote('ssh-key')
 
     def hosts_map(self):
         result = {}
