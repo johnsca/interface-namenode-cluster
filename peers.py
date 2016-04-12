@@ -10,8 +10,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
-
 from charms.reactive import RelationBase
 from charms.reactive import hook
 from charms.reactive import scopes
@@ -28,7 +26,6 @@ class NameNodePeers(RelationBase):
     def joined(self):
         conv = self.conversation()
         conv.set_state('{relation_name}.joined')
-        conv.set_state('{relation_name}.initialized')
 
     @hook('{peers:namenode-cluster}-relation-departed')
     def departed(self):
@@ -36,60 +33,15 @@ class NameNodePeers(RelationBase):
         conv.remove_state('{relation_name}.joined')
 
     def nodes(self):
-        node_names = [hookenv.local_unit().replace('/', '-')]
-        for conv in self.conversations():
-            node_names.append(conv.scope.replace('/', '-'))
-            node_names = sorted(node_names)
-            stored_nodes = hookenv.leader_get('validated_namenodes')
-            if not stored_nodes:
-                stored_nodes = node_names[:2]
-            if not hookenv.is_leader():
-                return stored_nodes
-            elif hookenv.is_leader():
-                checked_nodes = []
-                for node in node_names:
-                    result = utils.ha_node_state(node)
-                    if result and result == 'active' or result == 'standby':
-                        checked_nodes.append(result)
-                checked_nodes = sorted(checked_nodes)
-                if len(checked_nodes) < 2:
-                    hookenv.log("Only one node is responding, according to hadoop, HDFS HA is degraded...")
-                    return stored_nodes
-                if sorted(checked_nodes) == stored_nodes:
-                    return stored_nodes
-                else:
-                    hookenv.leader_set(validated_namenodes=checked_nodes)
-                    return checked_nodes
+        return sorted(self.hosts_map().values())
 
     def hosts_map(self):
-        result = {}
+        local_host_name = hookenv.local_unit().replace('/', '-')
+        local_ip = utils.resolve_private_address(hookenv.unit_private_ip())
+        result = {local_ip: local_host_name}
         for conv in self.conversations():
             addr = conv.get_remote('private-address', '')
             ip = utils.resolve_private_address(addr)
-            host_name = conv.scope.replace('/', '-')
+            host_name = list(conv.units)[0].replace('/', '-')
             result.update({ip: host_name})
         return result
-
-    def check_peer_port(self, port):
-        return all(utils.check_peer_port(peer_ip, port)
-                   for peer_ip in self.hosts_map().keys())
-
-    def jns_init(self):
-        for conv in self.conversations():
-            conv.set_remote(data={
-                'jns_ready': json.dumps(True),
-            })
-
-    def are_jns_init(self):
-        return all(json.loads(conv.get_remote('jns_ready', 'false'))
-                   for conv in self.conversations())
-
-    def zookeeper_formatted(self):
-        for conv in self.conversations():
-            conv.set_remote(data={
-                'zookeeper_formatted': json.dumps(True),
-            })
-
-    def is_zookeeper_formatted(self):
-        return all(json.loads(conv.get_remote('zookeeper_formatted', 'false'))
-                   for conv in self.conversations())
