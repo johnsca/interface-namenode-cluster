@@ -27,13 +27,24 @@ class NameNodePeers(RelationBase):
         conv = self.conversation()
         conv.set_state('{relation_name}.joined')
 
+    @hook('{peers:namenode-cluster}-relation-changed')
+    def changed(self):
+        conv = self.conversation()
+        if conv.get_remote('standby-ready'):
+            conv.set_state('{relation_name}.standby.ready')
+
     @hook('{peers:namenode-cluster}-relation-departed')
     def departed(self):
         conv = self.conversation()
         conv.remove_state('{relation_name}.joined')
 
     def nodes(self):
-        return sorted(self.hosts_map().values())
+        return sorted(list(conv.units)[0].replace('/', '-')
+                      for conv in self.conversations())
+
+    def standby_ready(self):
+        for conv in self.conversations():
+            conv.set_remote('standby-ready', 'true')
 
     def hosts_map(self):
         local_host_name = hookenv.local_unit().replace('/', '-')
